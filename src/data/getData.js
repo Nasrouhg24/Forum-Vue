@@ -16,10 +16,10 @@ export const getDiscussions = async () => {
 
     console.log("Fetched discussions:", discussions); // Log the discussions
 
-    return discussions;
+    return {fetchedDiscussions:discussions,error:null};
   } catch (error) {
     console.error("Error getting discussions:", error);
-    return [];
+    return {fetchedDiscussions:[],error:error};
   }
 };
 

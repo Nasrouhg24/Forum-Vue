@@ -71,9 +71,9 @@ const router = useRouter();
 const err = ref(false)
 const errNetwork = ref(false)
 
+
 const handleLogin = async () => {
-  err.value = false
-  errNetwork.value= false
+
   const {user,error} = await loginUser({ email: email.value, password: password.value });
   if (user) {
     router.push("/");
