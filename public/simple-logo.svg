@@ -1,0 +1,14 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Base circle -->
+  <circle cx="100" cy="100" r="90" fill="#f8f9fa" stroke="#212529" stroke-width="6"/>
+  
+  <!-- Abstract shapes -->
+  <path d="M60,70 Q100,30 140,70 T140,130 Q100,170 60,130 T60,70" 
+        fill="none" 
+        stroke="#212529" 
+        stroke-width="6" 
+        stroke-linecap="round"/>
+  
+  <!-- Inner accent -->
+  <circle cx="100" cy="100" r="25" fill="#212529"/>
+</svg>
