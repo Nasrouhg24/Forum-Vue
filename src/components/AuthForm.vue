@@ -1,4 +1,5 @@
 <template>
+
   <div class="d-flex justify-content-center align-items-center min-vh-100 bg-white">
     <form class="w-100 p-4 border rounded border-dark" style="max-width: 400px;" @submit.prevent="handleSubmit">
       <h2 class="mb-4 text-center text-dark">Créer un compte</h2>
@@ -64,6 +65,18 @@
         S'inscrire
       </button>
 
+      <!-- Google authentificationn -->
+      <hr class="my-4" />
+      <button
+        type="button"
+        class="btn btn-outline-dark w-100"
+        @click="handleGoogleSignIn"
+        :disabled="isLoading"
+      >
+        <span v-if="isLoadingGoogle" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Continuer avec Google
+      </button>
+
       <div class="d-flex justify-content-end mt-2">
         <router-link to="/login" class="text-dark" style="font-size: 0.9rem;">Login</router-link>
       </div>
@@ -73,9 +86,11 @@
 
 <script setup>
 import {ref, computed} from 'vue'
-import {registerUser} from "@/composables/useAuth";
+import {registerUser,signInWithGoogle} from "@/composables/useAuth";
 import {useRouter} from 'vue-router';
 
+
+const isLoadingGoogle = ref(false);
 const router = useRouter();
 const username = ref('')
 const email = ref('')
@@ -117,6 +132,32 @@ async function handleSubmit() {
     isLoading.value = false;
   }
 }
+
+
+async function handleGoogleSignIn() {
+  error.value = '';
+  isLoadingGoogle.value = true;
+
+  try {
+    const { user, error: googleError } = await signInWithGoogle();
+
+    if (googleError) {
+      throw new Error(googleError.message || "Erreur lors de la connexion avec Google");
+    }
+
+    if (user) {
+      // Navigate to appropriate page after successful Google sign-in
+      router.push('/'); // or wherever you want users to go after login
+    }
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    isLoadingGoogle.value = false;
+  }
+}
+
+
+
 </script>
 
 <style scoped>

@@ -1,35 +1,28 @@
 <template>
-
-   <!--Bootstrap icon -->
+  <!--Bootstrap icon -->
   <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
     <symbol id="exclamation-triangle-fill" viewBox="0 0 16 16">
       <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
     </symbol>
   </svg>
 
-
-
-
-
   <div
     class="alert alert-danger alert-dismissible fade show d-flex align-items-center shadow-sm border border-danger-subtle"
     role="alert"
     v-if="errNetwork"
   >
-        <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:">
-          <use xlink:href="#exclamation-triangle-fill"/>
-        </svg>
-        <div class="flex-grow-1">
-          <strong>Problème de connexion réseau :</strong> Veuillez vérifier votre connexion Internet.
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" @click="errNetwork = false"></button>
+    <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:">
+      <use xlink:href="#exclamation-triangle-fill"/>
+    </svg>
+    <div class="flex-grow-1">
+      <strong>Problème de connexion réseau :</strong> Veuillez vérifier votre connexion Internet.
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" @click="errNetwork = false"></button>
   </div>
 
-
-
-
   <div>
-    <h1 class="text-center my-4">Welcome to the Forum</h1>
+    <h1 v-if="isAuth" class="text-center my-4">Welcome {{currentUsername}} , to the Forum</h1>
+    <h1 v-if="!isAuth" class="text-center my-4">Welcome to the Forum</h1>
     <h2 class="text-center mb-4">Latest Discussions</h2>
 
     <!-- Show the carousel only if discussions exist -->
@@ -82,7 +75,6 @@
     <p v-else class="text-center text-muted">No discussions available.</p>
   </div>
 
-
   <HomeComp ></HomeComp>
 </template>
 
@@ -90,15 +82,42 @@
 import HomeComp from "@/components/HomeComp.vue";
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { getDiscussions, getUserById } from "@/data/getData";
+import {  onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from "@/composables/useFirestore"; // Corrected to use imported auth
 
 const discussions = ref([]);
 const UserNames = ref({});
 const errNetwork = ref(!navigator.onLine); // set to true if offline at load
 const loading = ref(true);
+const isAuth = ref(false);
+const currentUsername = ref('');
 
+// Check for network connection
 const checkConnection = () => {
   errNetwork.value = !navigator.onLine;
 };
+
+onMounted(() => {
+  onAuthStateChanged(auth, async (user) => {
+    isAuth.value = !!user;
+
+    if (user) {
+      try {
+        const userDocRef = doc(db, 'Utilisateurs', user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+          currentUsername.value = userSnap.data().username;
+        } else {
+          console.warn('No user document found in Firestore.');
+        }
+      } catch (err) {
+        console.error('Erreur lors de la récupération du username:', err);
+      }
+    }
+  });
+});
 
 onMounted(async () => {
   window.addEventListener("online", checkConnection);
@@ -112,7 +131,7 @@ onMounted(async () => {
   }
 
   try {
-    const { fetchedDiscussions, error } = await getDiscussions();
+    const {fetchedDiscussions, error} = await getDiscussions();
 
     if (error) {
       if (error.code === "auth/network-request-failed") {
@@ -140,12 +159,11 @@ onBeforeUnmount(() => {
   window.removeEventListener("online", checkConnection);
   window.removeEventListener("offline", checkConnection);
 });
-
 </script>
 
 <style scoped>
 .carousel-container {
-  max-width: 900px;  /* Increased from 800px */
+  max-width: 900px; /* Increased from 800px */
   margin: 0 auto;
   position: relative;
 }
@@ -163,6 +181,7 @@ onBeforeUnmount(() => {
   transition: transform 0.3s, box-shadow 0.3s;
   width: calc(100% - 40px);
 }
+
 .discussion-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);

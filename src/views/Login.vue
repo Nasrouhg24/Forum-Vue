@@ -7,10 +7,6 @@
     </symbol>
   </svg>
 
-
-
-
-
   <div
     class="alert alert-danger alert-dismissible fade show d-flex align-items-center shadow-sm border border-danger-subtle"
     role="alert"
@@ -24,7 +20,6 @@
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" @click="errNetwork = false"></button>
   </div>
-
 
   <div class="d-flex justify-content-center align-items-center min-vh-100 bg-white" >
     <form class="w-100 p-4 border rounded border-dark" style="max-width: 400px;" @submit.prevent="handleLogin">
@@ -50,43 +45,102 @@
           v-model="password"
           required
         />
-        <small v-if="err" class="invalid-feedback">Problème d'authentification veuillez verifier votre email ou mot de passe </small>
+        <small v-if="err" class="invalid-feedback d-block text-danger">Problème d'authentification veuillez verifier votre email ou mot de passe </small>
       </div>
 
-      <button type="submit" class="btn btn-dark w-100">Se connecter</button>
+      <button
+        type="submit"
+        class="btn btn-dark w-100"
+        :disabled="isLoading"
+      >
+        <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Se connecter
+      </button>
 
-      <router-link to="/register" class="text-center text-dark mt-2" style="font-size: 0.9rem;">Créer un compte</router-link>
+      <!-- Google Authentication Button -->
+      <hr class="my-4" />
+      <button
+        type="button"
+        class="btn btn-outline-dark w-100"
+        @click="handleGoogleSignIn"
+        :disabled="isLoadingGoogle"
+      >
+        <span v-if="isLoadingGoogle" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Continuer avec Google
+      </button>
+
+      <div class="d-flex justify-content-center mt-2">
+        <router-link to="/register" class="text-dark" style="font-size: 0.9rem;">Créer un compte</router-link>
+      </div>
     </form>
   </div>
 </template>
 
 <script setup>
-import { ref} from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { loginUser } from '@/composables/useAuth';
+import { loginUser, signInWithGoogle } from '@/composables/useAuth';
 
 const email = ref("");
 const password = ref("");
 const router = useRouter();
-const err = ref(false)
-const errNetwork = ref(false)
-
+const err = ref(false);
+const errNetwork = ref(false);
+const isLoading = ref(false);
+const isLoadingGoogle = ref(false);
 
 const handleLogin = async () => {
+  err.value = false;
+  errNetwork.value = false;
+  isLoading.value = true;
 
-  const {user,error} = await loginUser({ email: email.value, password: password.value });
-  if (user) {
-    router.push("/");
+  try {
+    const {user, error} = await loginUser({ email: email.value, password: password.value });
+    if (user) {
+      router.push("/");
+    }
+    if (error) {
+      if (error.code === "auth/network-request-failed") {
+        console.log("No connection");
+        errNetwork.value = true;
+      } else {
+        err.value = true;
+      }
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+    err.value = true;
+  } finally {
+    isLoading.value = false;
   }
-  if (error){
-    if (error.code ==="auth/network-request-failed"){
-      console.log("No connection")
-      errNetwork.value = true
+};
 
+const handleGoogleSignIn = async () => {
+  err.value = false;
+  errNetwork.value = false;
+  isLoadingGoogle.value = true;
+
+  try {
+    const { user, error: googleError } = await signInWithGoogle();
+
+    if (googleError) {
+      if (googleError.code === "auth/network-request-failed") {
+        errNetwork.value = true;
+      } else {
+        err.value = true;
+      }
+      console.error("Google sign-in error:", googleError);
+      return;
     }
-    else {
-      err.value= true
+
+    if (user) {
+      router.push("/");
     }
+  } catch (error) {
+    console.error("Google sign-in unexpected error:", error);
+    err.value = true;
+  } finally {
+    isLoadingGoogle.value = false;
   }
 };
 </script>
@@ -95,5 +149,4 @@ const handleLogin = async () => {
 .alert {
   transition: opacity 0.5s ease-in-out, transform 0.3s ease-in-out;
 }
-
 </style>

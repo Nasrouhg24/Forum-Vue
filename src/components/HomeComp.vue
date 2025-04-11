@@ -71,7 +71,7 @@
           <div class="card shadow-sm h-100">
             <div class="card-body">
               <h5 class="card-title">Comment démarrer une discussion ?</h5>
-              <p class="card-text">Connectez-vous, puis cliquez sur "New Discussion".</p>
+              <p class="card-text">Connectez-vous, puis cliquez sur "New npm Discussion".</p>
             </div>
           </div>
         </div>
