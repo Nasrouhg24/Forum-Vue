@@ -49,7 +49,7 @@ export const registerUser = async ({ email, password, username }) => {
       throw new Error("Le mot de passe est trop faible.");
     }
     else if (error.code === 'auth/network-request-failed') {
-      throw new Error("Problème de connexion réseau :Veuillez vérifier votre connexion Internet.");
+      throw new Error("Problème de connexion réseau : Veuillez vérifier votre connexion Internet.");
     }
 
     else {
