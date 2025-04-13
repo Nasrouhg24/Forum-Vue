@@ -2,7 +2,10 @@ import { db, auth } from "@/composables/useFirestore";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  sendEmailVerification
+  sendEmailVerification,
+  GoogleAuthProvider,
+  signInWithPopup
+
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -44,7 +47,12 @@ export const registerUser = async ({ email, password, username }) => {
       throw new Error("Adresse email invalide.");
     } else if (error.code === 'auth/weak-password') {
       throw new Error("Le mot de passe est trop faible.");
-    } else {
+    }
+    else if (error.code === 'auth/network-request-failed') {
+      throw new Error("Problème de connexion réseau : Veuillez vérifier votre connexion Internet.");
+    }
+
+    else {
       throw new Error(error.message);
     }
   }
@@ -68,3 +76,36 @@ export const loginUser = async ({ email, password}) => {
 
   }
 };
+
+
+
+//authentificate with google:
+export const signInWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  // Add basic scopes
+  provider.addScope('email');
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Store user info in Firestore with only essential fields
+    await setDoc(doc(db, "Utilisateurs", user.uid), {
+      uid: user.uid,
+      username: user.displayName || "Utilisateur Google",
+      email: user.email,
+      emailVerified: user.emailVerified,
+      createdAt: serverTimestamp(),
+    }, { merge: true });
+
+    return { user, error: null };
+  } catch (error) {
+    console.error("Erreur Google Auth:", error);
+    return { user: null, error };
+  }
+}
+
+
+
+
+//login with google:
